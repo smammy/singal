@@ -17,7 +17,7 @@ fswatch_args = [
 
 rsync_args = [
     '--rsh', shlex.join(['ssh', '-o', 'ControlMaster=auto',
-                                '-o', 'ControlPath=%d/.ssh/control/%C',
+                                '-o', 'ControlPath=~/.ssh/control/%C',
                                 '-o', 'ControlPersist=yes']),
     '--links',
     '--executability', #'--perms',
