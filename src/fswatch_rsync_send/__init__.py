@@ -1,4 +1,5 @@
 import collections
+import os
 import re
 import shlex
 import subprocess
@@ -166,8 +167,17 @@ def send_batch(batch, local, remote):
 
 
 def main():
+    global fswatch_args
+    global rsync_args
+    
     local = Path(sys.argv[1])
     remote = sys.argv[2]
+    
+    if fswatch_extra := os.environ.get('FSWATCH_RSYNC_SEND_EXTRA_FSWATCH_ARGS'):
+        fswatch_args += shlex.split(fswatch_extra)
+    
+    if rsync_extra := os.environ.get('FSWATCH_RSYNC_SEND_EXTRA_RSYNC_ARGS'):
+        rsync_args += shlex.split(rsync_extra)
     
     with open(local/'.rsync-exclude') as rsync_exclusions:
         exclusions = [rsync_pattern_to_fswatch_regex(line.rstrip('\n'), local)
