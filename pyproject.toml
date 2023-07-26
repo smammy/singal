@@ -1,0 +1,20 @@
+[build-system]
+requires = [ "setuptools>=61.0" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fswatch-rsync-send"
+version = "0.0.1"
+description = "Keep a remote mirror up-to-date with local changes"
+readme = "README.rst"
+requires-python = ">=3.8"
+license = { file="LICENSE.txt" }
+authors = [
+    { name="Sam Birch", email="sam@porcupine.club" },
+]
+dependencies = [
+    "readline0",
+]
+
+[project.scripts]
+fswatch-rsync-send = "fswatch_rsync_send:main"
