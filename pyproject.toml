@@ -13,6 +13,7 @@ authors = [
     { name="Sam Birch", email="sam@porcupine.club" },
 ]
 dependencies = [
+    "ordered-set-37",
     "readline0",
 ]
 

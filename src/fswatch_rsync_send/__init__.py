@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ordered_set_37 import OrderedSet
 from readline0 import readline0
 
 fswatch_args = [
@@ -194,7 +195,7 @@ def main():
     
     send_initial(local, remote)
     proc = watch_dir(local, exclusions)
-    batch = []
+    batch = OrderedSet()
     for line in readline0(proc.stdout, separator=b'\x00', blocksize=1):
         line = line.decode()
         if line == 'NoOp':
@@ -204,4 +205,4 @@ def main():
             path = Path(line)
             if trace:
                 print(f'fswatch: “{path}”', file=sys.stderr)
-            batch.append(path)
+            batch.add(path)
