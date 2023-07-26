@@ -52,6 +52,8 @@ rsync_incremental_args = [
     #'--dry-run',
 ]
 
+trace = False
+
 
 _re_escape_most_map = {i: '\\'+chr(i) for i in b'()[]{}?*+|^$\\.\t\n\r\v\f'}
 def re_escape_most(pattern):
@@ -139,7 +141,8 @@ def send_initial(local, remote):
             f'--exclude-from={local}/.rsync-exclude',
             str(local)+'/./',
             remote]
-    #print('+', shlex.join(args), file=sys.stderr)
+    if trace:
+        print('+', shlex.join(args), file=sys.stderr)
     subprocess.run(args, check=True)
 
 
@@ -147,7 +150,8 @@ def watch_dir(path, exclusions):
     args = ['fswatch', *fswatch_args]
     args += [f'--exclude={regex}' for regex in exclusions]
     args.append(str(path))
-    #print('+', shlex.join(args), file=sys.stderr)
+    if trace:
+        print('+', shlex.join(args), file=sys.stderr)
     return subprocess.Popen(args, stdout=subprocess.PIPE)
 
 
@@ -158,7 +162,8 @@ def send_batch(batch, local, remote):
             f'--exclude-from={local}/.rsync-exclude',
             *[f'{local}/./{path.relative_to(local)}' for path in batch],
             remote]
-    #print('+', shlex.join(args), file=sys.stderr)
+    if trace:
+        print('+', shlex.join(args), file=sys.stderr)
     proc = subprocess.run(args)
     if proc.returncode in [24]:
         pass
@@ -169,6 +174,7 @@ def send_batch(batch, local, remote):
 def main():
     global fswatch_args
     global rsync_args
+    global trace
     
     local = Path(sys.argv[1])
     remote = sys.argv[2]
@@ -178,6 +184,9 @@ def main():
     
     if rsync_extra := os.environ.get('FSWATCH_RSYNC_SEND_EXTRA_RSYNC_ARGS'):
         rsync_args += shlex.split(rsync_extra)
+    
+    if trace_var := os.environ.get('FSWATCH_RSYNC_SEND_TRACE'):
+        trace = bool(trace_var)
     
     with open(local/'.rsync-exclude') as rsync_exclusions:
         exclusions = [rsync_pattern_to_fswatch_regex(line.rstrip('\n'), local)
@@ -193,4 +202,6 @@ def main():
             batch.clear()
         else:
             path = Path(line)
+            if trace:
+                print(f'fswatch: “{path}”', file=sys.stderr)
             batch.append(path)
