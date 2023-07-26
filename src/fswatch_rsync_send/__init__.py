@@ -12,6 +12,9 @@ from readline0 import readline0
 fswatch_args = [
     '--recursive',
     '--extended',
+    *[f'--event={et}' for et in ['Created', 'Updated', 'Removed', 'Renamed',
+                                 'OwnerModified', 'AttributeModified',
+                                 'MovedFrom', 'MovedTo']],
     #'--no-defer',
     '--batch-marker',
     '--print0',
