@@ -142,7 +142,7 @@ def send_initial(local, remote):
     args = ['rsync',
             *rsync_args,
             *rsync_initial_args,
-            f'--exclude-from={local}/.rsync-exclude',
+            f'--exclude-from={local}/.singalignore',
             str(local)+'/./',
             remote]
     if trace:
@@ -163,7 +163,7 @@ def send_batch(batch, local, remote):
     args = ['rsync',
             *rsync_args,
             *rsync_incremental_args,
-            f'--exclude-from={local}/.rsync-exclude',
+            f'--exclude-from={local}/.singalignore',
             *[f'{local}/./{path.relative_to(local)}' for path in batch],
             remote]
     if trace:
@@ -183,16 +183,16 @@ def main():
     local = Path(sys.argv[1])
     remote = sys.argv[2]
     
-    if fswatch_extra := os.environ.get('FSWATCH_RSYNC_SEND_EXTRA_FSWATCH_ARGS'):
+    if fswatch_extra := os.environ.get('SINGAL_EXTRA_FSWATCH_ARGS'):
         fswatch_args += shlex.split(fswatch_extra)
     
-    if rsync_extra := os.environ.get('FSWATCH_RSYNC_SEND_EXTRA_RSYNC_ARGS'):
+    if rsync_extra := os.environ.get('SINGAL_EXTRA_RSYNC_ARGS'):
         rsync_args += shlex.split(rsync_extra)
     
-    if trace_var := os.environ.get('FSWATCH_RSYNC_SEND_TRACE'):
+    if trace_var := os.environ.get('SINGAL_TRACE'):
         trace = bool(trace_var)
     
-    with open(local/'.rsync-exclude') as rsync_exclusions:
+    with open(local/'.singalignore') as rsync_exclusions:
         exclusions = [rsync_pattern_to_fswatch_regex(line.rstrip('\n'), local)
                       for line in rsync_exclusions]
     
