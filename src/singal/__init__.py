@@ -51,8 +51,9 @@ rsync_initial_args = [
 ]    
 
 rsync_incremental_args = [
-    '--dirs',
+    '--recursive',
     '--delete-missing-args',
+    '--force',
     #'--dry-run',
 ]
 
