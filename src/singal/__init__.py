@@ -139,11 +139,21 @@ def rsync_pattern_to_fswatch_regex(pat, base):
     return regex_base + regex_head + pat + regex_tail
 
 
-def send_initial(local, remote):
+def ignorefile_to_fswatch_regexen(ignorefile, local):
+    with open(ignorefile) as rsync_exclusions:
+        for line in rsync_exclusions:
+            yield rsync_pattern_to_fswatch_regex(line.rstrip('\n'), local)
+
+
+def send_initial(local, remote, ignorefile):
+    if ignorefile is not None:
+        rsync_ignore_args = [f'--exclude-from={ignorefile}']
+    else:
+        rsync_ignore_args = []
     args = ['rsync',
             *rsync_args,
             *rsync_initial_args,
-            f'--exclude-from={local}/.singalignore',
+            *rsync_ignore_args,
             str(local)+'/./',
             remote]
     if trace:
@@ -160,11 +170,15 @@ def watch_dir(path, exclusions):
     return subprocess.Popen(args, stdout=subprocess.PIPE)
 
 
-def send_batch(batch, local, remote):
+def send_batch(batch, local, remote, ignorefile):
+    if ignorefile is not None:
+        rsync_ignore_args = [f'--exclude-from={ignorefile}']
+    else:
+        rsync_ignore_args = []
     args = ['rsync',
             *rsync_args,
             *rsync_incremental_args,
-            f'--exclude-from={local}/.singalignore',
+            *rsync_ignore_args,
             *[f'{local}/./{path.relative_to(local)}' for path in batch],
             remote]
     if trace:
@@ -183,6 +197,7 @@ def main():
     
     local = Path(sys.argv[1])
     remote = sys.argv[2]
+    ignorefile = local/'.singalignore'
     
     if fswatch_extra := os.environ.get('SINGAL_EXTRA_FSWATCH_ARGS'):
         fswatch_args += shlex.split(fswatch_extra)
@@ -193,17 +208,21 @@ def main():
     if trace_var := os.environ.get('SINGAL_TRACE'):
         trace = bool(trace_var)
     
-    with open(local/'.singalignore') as rsync_exclusions:
-        exclusions = [rsync_pattern_to_fswatch_regex(line.rstrip('\n'), local)
-                      for line in rsync_exclusions]
+    if ignorefile.exists():
+        exclusions = ignorefile_to_fswatch_regexen(ignorefile, local)
+    else:
+        print(f'note: {ignorefile} does not exist, so everything will be',
+              'transferred.', file=sys.stderr)
+        ignorefile = None
+        exclusions = []
     
-    send_initial(local, remote)
+    send_initial(local, remote, ignorefile)
     proc = watch_dir(local, exclusions)
     batch = OrderedSet()
     for line in readline0(proc.stdout, separator=b'\x00', blocksize=1):
         line = line.decode()
         if line == 'NoOp':
-            send_batch(batch, local.absolute(), remote)
+            send_batch(batch, local.absolute(), remote, ignorefile)
             batch.clear()
         else:
             path = Path(line)
